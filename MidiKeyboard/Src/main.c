@@ -40,7 +40,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-
+#include "utilities.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -62,6 +62,9 @@
 #define MIDI_PROG 0b11000000
 #define MIDI_IGNORE 255
 #define MIDI_PED 64
+#define PEDAL_ZONE 0
+#define FALSE 0
+#define TRUE 1
 
 
 
@@ -80,12 +83,25 @@ UART_HandleTypeDef huart4;
 /* USER CODE BEGIN PV */
 
 uint8_t keyboardMatrix[8];
-uint8_t midiByte=0;
-uint8_t midiData[2];
 uint8_t m4kZone;
 uint8_t m4kNote;
 uint8_t rawZone;
-uint8_t midiStatus;
+uint8_t tempInt;
+
+/* ring buffer */
+
+volatile struct rb ringBuffer;
+
+/* midi command struct */
+struct mc {
+	volatile uint8_t status;
+	volatile uint8_t data[2];
+	volatile uint8_t dataSize;
+	volatile uint8_t dataCounter;
+	volatile uint8_t complete;
+};
+
+volatile struct mc midiCommand;
 
 HAL_StatusTypeDef receiveStatus;
 
@@ -100,6 +116,7 @@ static void MX_UART4_Init(void);
 
 inline void Note_On(uint8_t);
 inline void Note_Off(uint8_t);
+inline uint8_t ReadRingBuffer(void);
 
 /* USER CODE END PFP */
 
@@ -116,10 +133,19 @@ int main(void)
 {
 	/* USER CODE BEGIN 1 */
 
+	uint8_t midiByte=0;
+
 	/* all keys high to start with */
 	for (uint8_t i=0; i<8; i++) {
 		keyboardMatrix[i]=255;
 	}
+
+	/* zero some things */
+	ringBuffer.readIndex=0;
+	ringBuffer.writeIndex=0;
+	midiCommand.complete=0;
+	midiCommand.dataCounter=0;
+	midiCommand.dataSize=2;
 
 	/* USER CODE END 1 */
 
@@ -148,8 +174,7 @@ int main(void)
 	/* enable SPI */
 	__HAL_SPI_ENABLE(&hspi3);
 
-	/* set initial midi-status to ignore */
-	midiStatus=MIDI_IGNORE;
+	__HAL_UART_ENABLE(&huart4);
 
 	/* USER CODE END 2 */
 
@@ -167,112 +192,100 @@ int main(void)
 		 * middle C is 1st note of zone 4 (int 127, midi 60)
 		 */
 
-		/* get a byte from the UART */
-		receiveStatus = HAL_UART_Receive(&huart4, &midiByte, 1, 100);
+		/* get a midi command from the ring buffer */
 
-		if (receiveStatus == HAL_OK) {
-			/* is it a control byte? */
-			if (midiByte>127) {
-				/* Set a new status */
-				switch(midiByte & MIDI_MASK) {
-				case MIDI_ON :
-					midiStatus = MIDI_ON;
-					break;
-				case MIDI_OFF :
-					midiStatus = MIDI_OFF;
-					break;
-				case MIDI_CONT :
-					midiStatus = MIDI_CONT;
-					break;
-					/* These two controls only have one data byte following */
-				case (MIDI_PROG || MIDI_PRES) :
-										midiStatus = MIDI_PROG;
-				break;
-				/* If it's something else */
-				default:
-					midiStatus = MIDI_IGNORE;
+		while(midiCommand.complete==0)
+		{
+			if (ringBuffer.readIndex!=ringBuffer.writeIndex)
+			{
+				/* only if there's a byte available */
+				midiByte=ReadRingBuffer();
+				if (midiByte>127)
+				{
+					/* a status byte */
+					switch(midiByte & MIDI_MASK) {
+					case MIDI_ON :
+						midiCommand.status=MIDI_ON;
+						midiCommand.dataSize=2;
+						midiCommand.dataCounter=0;
+						break;
+					case MIDI_OFF :
+						midiCommand.status=MIDI_OFF;
+						midiCommand.dataSize=2;
+						midiCommand.dataCounter=0;
+						break;
+					case MIDI_CONT :
+						midiCommand.status=MIDI_CONT;
+						midiCommand.dataSize=2;
+						midiCommand.dataCounter=0;
+						break;
+					case MIDI_PROG :
+						midiCommand.status=MIDI_PROG;
+						midiCommand.dataSize=1;
+						midiCommand.dataCounter=0;
+						break;
+					case MIDI_PRES :
+						midiCommand.status=MIDI_PROG;
+						midiCommand.dataSize=1;
+						midiCommand.dataCounter=0;
+						break;
+					default:
+						midiCommand.status=MIDI_IGNORE;
+						midiCommand.dataSize=2;
+						midiCommand.dataCounter=0;
+					}
+				} else {
+					/* a data byte */
+					midiCommand.data[midiCommand.dataCounter] = midiByte;
+					midiCommand.dataCounter++;
+				}
+				if (midiCommand.dataCounter>=midiCommand.dataSize)
+					/* now have a complete command */
+				{
+					midiCommand.complete=1;
 				}
 
-				switch (midiStatus) {
-				case MIDI_PROG :
-					HAL_UART_Receive(&huart4, midiData, 1, 100);
-					midiData[1]=0;
-					break;
-				case MIDI_IGNORE :
-					HAL_UART_Receive(&huart4, midiData, 2, 100);
-					break;
-				case MIDI_ON :
-					HAL_UART_Receive(&huart4, midiData, 2, 100);
-					if (midiData[1]!=0) {
-						Note_On(midiData[0]);
-					} else {
-						Note_Off(midiData[0]);
-					}
-					break;
-				case MIDI_OFF :
-					HAL_UART_Receive(&huart4, midiData, 2, 100);
-					Note_Off(midiData[0]);
-					break;
-				case MIDI_CONT :
-					HAL_UART_Receive(&huart4, midiData, 2, 100);
-					if (midiData[0]==MIDI_PED) {
-						if (midiData[0]<64) {
-							/**
-							 * Turn it on by NOT ANDing
-							 */
-							keyboardMatrix[0] &= ~(1 << 6);
-						} else {
-							/**
-							 * Turn it off by ORing
-							 */
-							keyboardMatrix[0] |= (1 << 6);
-						}
-					}
-					break;
-
-				}
-			} else {
-				/* We're in a run-on condition, we have a byte already */
-				switch (midiStatus) {
-				case MIDI_PROG :
-					break;
-				case MIDI_IGNORE :
-					HAL_UART_Receive(&huart4, &midiByte, 1, 100);
-					break;
-				case MIDI_ON :
-					midiData[0]=midiByte;
-					HAL_UART_Receive(&huart4, &midiByte, 1, 100);
-					if (midiByte!=0) {
-						Note_On(midiData[0]);
-					} else {
-						Note_Off(midiData[0]);
-					}
-					break;
-				case MIDI_OFF :
-					Note_Off(midiByte);
-					HAL_UART_Receive(&huart4, &midiByte, 1, 100);
-					break;
-				case MIDI_CONT :
-					if (midiByte==MIDI_PED) {
-						if (midiByte<64) {
-							/**
-							 * Turn it on by NOT ANDing
-							 */
-							keyboardMatrix[0] &= ~(1 << 6);
-						} else {
-							/**
-							 * Turn it off by ORing
-							 */
-							keyboardMatrix[0] |= (1 << 6);
-						}
-					}
-					HAL_UART_Receive(&huart4, &midiByte, 1, 100);
-					break;
-				}
 			}
-
 		}
 
+		/* Process the midi command */
+		if (midiCommand.complete==1) {
+			switch (midiCommand.status)
+			{
+			case MIDI_ON :
+
+				if (midiCommand.data[1]!=0) {
+					Note_On(midiCommand.data[0]);
+				}
+				else {
+					Note_Off(midiCommand.data[0]);
+				}
+				break;
+			case MIDI_OFF :
+				Note_Off(midiCommand.data[0]);
+				break;
+			case MIDI_CONT :
+				if (midiCommand.data[0]==MIDI_PED) {
+					if (midiCommand.data[1]<64) {
+						/**
+						 * Turn it on by NOT ANDing
+						 */
+						keyboardMatrix[PEDAL_ZONE] &= ~(1 << 6);
+					} else {
+						/**
+						 * Turn it off by ORing
+						 */
+						keyboardMatrix[PEDAL_ZONE] |= (1 << 6);
+					}
+				}
+				break;
+			default :
+				break;
+			}
+			/*reset the command */
+			midiCommand.complete=0;
+			midiCommand.dataCounter=0;
+		}
 	}
 
 	/* USER CODE END 3 */
@@ -390,6 +403,7 @@ static void MX_UART4_Init(void)
 		Error_Handler();
 	}
 	/* USER CODE BEGIN UART4_Init 2 */
+	huart4.Instance->CR1 |= USART_CR1_RXNEIE;
 
 	/* USER CODE END UART4_Init 2 */
 
@@ -477,6 +491,13 @@ inline void Note_Off(uint8_t note)
 	}
 }
 
+inline uint8_t ReadRingBuffer(void)
+{
+	tempInt = ringBuffer.readIndex;
+	ringBuffer.readIndex++;
+	ringBuffer.readIndex&=127;
+	return ringBuffer.data[tempInt];
+}
 
 
 /* USER CODE END 4 */

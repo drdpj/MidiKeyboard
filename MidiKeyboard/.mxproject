@@ -1,7 +1,7 @@
 [PreviousGenFiles]
-HeaderPath=C:/Users/djame/STM32CubeIDE/workspace_1.0.0/MidiKeyboard/Inc
+HeaderPath=C:/Users/djame/git/repository/MidiKeyboard/Inc
 HeaderFiles=stm32f4xx_it.h;stm32f4xx_hal_conf.h;main.h;
-SourcePath=C:/Users/djame/STM32CubeIDE/workspace_1.0.0/MidiKeyboard/Src
+SourcePath=C:/Users/djame/git/repository/MidiKeyboard/Src
 SourceFiles=stm32f4xx_it.c;stm32f4xx_hal_msp.c;main.c;
 
 [PreviousLibFiles]
