@@ -41,10 +41,9 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f4xx_it.h"
-#include "utilities.h"
-
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "utilities.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -82,7 +81,7 @@ uint16_t keyZone;
 extern SPI_HandleTypeDef hspi3;
 extern UART_HandleTypeDef huart4;
 /* USER CODE BEGIN EV */
-extern uint8_t keyboardMatrix[8];
+extern volatile uint8_t keyboardMatrix[8];
 extern volatile struct rb ringBuffer;
 /* USER CODE END EV */
 

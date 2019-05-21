@@ -40,10 +40,10 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "utilities.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "utilities.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -82,7 +82,7 @@ UART_HandleTypeDef huart4;
 
 /* USER CODE BEGIN PV */
 
-uint8_t keyboardMatrix[8];
+volatile uint8_t keyboardMatrix[8];
 uint8_t m4kZone;
 uint8_t m4kNote;
 uint8_t rawZone;
@@ -126,17 +126,18 @@ inline uint8_t ReadRingBuffer(void);
 /* USER CODE END 0 */
 
 /**
- * @brief  The application entry point.
- * @retval int
- */
+  * @brief  The application entry point.
+  * @retval int
+  */
 int main(void)
 {
-	/* USER CODE BEGIN 1 */
+  /* USER CODE BEGIN 1 */
 
 	uint8_t midiByte=0;
+	uint8_t i = 0;
 
 	/* all keys high to start with */
-	for (uint8_t i=0; i<8; i++) {
+	for (i=0; i<8; i++) {
 		keyboardMatrix[i]=255;
 	}
 
@@ -147,46 +148,46 @@ int main(void)
 	midiCommand.dataCounter=0;
 	midiCommand.dataSize=2;
 
-	/* USER CODE END 1 */
+  /* USER CODE END 1 */
+  
 
+  /* MCU Configuration--------------------------------------------------------*/
 
-	/* MCU Configuration--------------------------------------------------------*/
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  HAL_Init();
 
-	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-	HAL_Init();
+  /* USER CODE BEGIN Init */
 
-	/* USER CODE BEGIN Init */
+  /* USER CODE END Init */
 
-	/* USER CODE END Init */
+  /* Configure the system clock */
+  SystemClock_Config();
 
-	/* Configure the system clock */
-	SystemClock_Config();
+  /* USER CODE BEGIN SysInit */
 
-	/* USER CODE BEGIN SysInit */
+  /* USER CODE END SysInit */
 
-	/* USER CODE END SysInit */
-
-	/* Initialize all configured peripherals */
-	MX_GPIO_Init();
-	MX_SPI3_Init();
-	MX_UART4_Init();
-	/* USER CODE BEGIN 2 */
+  /* Initialize all configured peripherals */
+  MX_GPIO_Init();
+  MX_SPI3_Init();
+  MX_UART4_Init();
+  /* USER CODE BEGIN 2 */
 	/* enable SPI */
 	__HAL_SPI_ENABLE(&hspi3);
 
 	__HAL_UART_ENABLE(&huart4);
 
-	/* USER CODE END 2 */
+  /* USER CODE END 2 */
 
-	/* Infinite loop */
-	/* USER CODE BEGIN WHILE */
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
 
 
 	while (1)
 	{
-		/* USER CODE END WHILE */
+    /* USER CODE END WHILE */
 
-		/* USER CODE BEGIN 3 */
+    /* USER CODE BEGIN 3 */
 		/**
 		 * Zones 1-7 have notes, zone 8 has the control pedal
 		 * middle C is 1st note of zone 4 (int 127, midi 60)
@@ -289,168 +290,168 @@ int main(void)
 		}
 	}
 
-	/* USER CODE END 3 */
+  /* USER CODE END 3 */
 }
 
 /**
- * @brief System Clock Configuration
- * @retval None
- */
+  * @brief System Clock Configuration
+  * @retval None
+  */
 void SystemClock_Config(void)
 {
-	RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-	RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-	/** Configure the main internal regulator output voltage
-	 */
-	__HAL_RCC_PWR_CLK_ENABLE();
-	__HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
-	/** Initializes the CPU, AHB and APB busses clocks
-	 */
-	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-	RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-	RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-	RCC_OscInitStruct.PLL.PLLM = 16;
-	RCC_OscInitStruct.PLL.PLLN = 336;
-	RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV4;
-	RCC_OscInitStruct.PLL.PLLQ = 2;
-	RCC_OscInitStruct.PLL.PLLR = 2;
-	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-	{
-		Error_Handler();
-	}
-	/** Initializes the CPU, AHB and APB busses clocks
-	 */
-	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-			|RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
-	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+  /** Configure the main internal regulator output voltage 
+  */
+  __HAL_RCC_PWR_CLK_ENABLE();
+  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
+  /** Initializes the CPU, AHB and APB busses clocks 
+  */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLM = 16;
+  RCC_OscInitStruct.PLL.PLLN = 336;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV4;
+  RCC_OscInitStruct.PLL.PLLQ = 2;
+  RCC_OscInitStruct.PLL.PLLR = 2;
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /** Initializes the CPU, AHB and APB busses clocks 
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-	if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
-	{
-		Error_Handler();
-	}
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  {
+    Error_Handler();
+  }
 }
 
 /**
- * @brief SPI3 Initialization Function
- * @param None
- * @retval None
- */
+  * @brief SPI3 Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_SPI3_Init(void)
 {
 
-	/* USER CODE BEGIN SPI3_Init 0 */
+  /* USER CODE BEGIN SPI3_Init 0 */
 
-	/* USER CODE END SPI3_Init 0 */
+  /* USER CODE END SPI3_Init 0 */
 
-	/* USER CODE BEGIN SPI3_Init 1 */
+  /* USER CODE BEGIN SPI3_Init 1 */
 
-	/* USER CODE END SPI3_Init 1 */
-	/* SPI3 parameter configuration*/
-	hspi3.Instance = SPI3;
-	hspi3.Init.Mode = SPI_MODE_SLAVE;
-	hspi3.Init.Direction = SPI_DIRECTION_2LINES_RXONLY;
-	hspi3.Init.DataSize = SPI_DATASIZE_8BIT;
-	hspi3.Init.CLKPolarity = SPI_POLARITY_HIGH;
-	hspi3.Init.CLKPhase = SPI_PHASE_2EDGE;
-	hspi3.Init.NSS = SPI_NSS_SOFT;
-	hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
-	hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
-	hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
-	hspi3.Init.CRCPolynomial = 10;
-	if (HAL_SPI_Init(&hspi3) != HAL_OK)
-	{
-		Error_Handler();
-	}
-	/* USER CODE BEGIN SPI3_Init 2 */
+  /* USER CODE END SPI3_Init 1 */
+  /* SPI3 parameter configuration*/
+  hspi3.Instance = SPI3;
+  hspi3.Init.Mode = SPI_MODE_SLAVE;
+  hspi3.Init.Direction = SPI_DIRECTION_2LINES_RXONLY;
+  hspi3.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi3.Init.CLKPolarity = SPI_POLARITY_HIGH;
+  hspi3.Init.CLKPhase = SPI_PHASE_2EDGE;
+  hspi3.Init.NSS = SPI_NSS_SOFT;
+  hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
+  hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
+  hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hspi3.Init.CRCPolynomial = 10;
+  if (HAL_SPI_Init(&hspi3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN SPI3_Init 2 */
 
 	/* Set interrupt on buffer not empty */
 	hspi3.Instance->CR2 |= SPI_CR2_RXNEIE;
 
-	/* USER CODE END SPI3_Init 2 */
+  /* USER CODE END SPI3_Init 2 */
 
 }
 
 /**
- * @brief UART4 Initialization Function
- * @param None
- * @retval None
- */
+  * @brief UART4 Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_UART4_Init(void)
 {
 
-	/* USER CODE BEGIN UART4_Init 0 */
+  /* USER CODE BEGIN UART4_Init 0 */
 
-	/* USER CODE END UART4_Init 0 */
+  /* USER CODE END UART4_Init 0 */
 
-	/* USER CODE BEGIN UART4_Init 1 */
+  /* USER CODE BEGIN UART4_Init 1 */
 
-	/* USER CODE END UART4_Init 1 */
-	huart4.Instance = UART4;
-	huart4.Init.BaudRate = 31250;
-	huart4.Init.WordLength = UART_WORDLENGTH_8B;
-	huart4.Init.StopBits = UART_STOPBITS_1;
-	huart4.Init.Parity = UART_PARITY_NONE;
-	huart4.Init.Mode = UART_MODE_RX;
-	huart4.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-	huart4.Init.OverSampling = UART_OVERSAMPLING_16;
-	if (HAL_UART_Init(&huart4) != HAL_OK)
-	{
-		Error_Handler();
-	}
-	/* USER CODE BEGIN UART4_Init 2 */
+  /* USER CODE END UART4_Init 1 */
+  huart4.Instance = UART4;
+  huart4.Init.BaudRate = 31250;
+  huart4.Init.WordLength = UART_WORDLENGTH_8B;
+  huart4.Init.StopBits = UART_STOPBITS_1;
+  huart4.Init.Parity = UART_PARITY_NONE;
+  huart4.Init.Mode = UART_MODE_RX;
+  huart4.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart4.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN UART4_Init 2 */
 	huart4.Instance->CR1 |= USART_CR1_RXNEIE;
 
-	/* USER CODE END UART4_Init 2 */
+  /* USER CODE END UART4_Init 2 */
 
 }
 
 /**
- * @brief GPIO Initialization Function
- * @param None
- * @retval None
- */
+  * @brief GPIO Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_GPIO_Init(void)
 {
-	GPIO_InitTypeDef GPIO_InitStruct = {0};
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-	/* GPIO Ports Clock Enable */
-	__HAL_RCC_GPIOC_CLK_ENABLE();
-	__HAL_RCC_GPIOH_CLK_ENABLE();
-	__HAL_RCC_GPIOA_CLK_ENABLE();
-	__HAL_RCC_GPIOB_CLK_ENABLE();
+  /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOH_CLK_ENABLE();
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
-	/*Configure GPIO pin Output Level */
-	HAL_GPIO_WritePin(GPIOA, PB0_Pin|PB1_Pin|PB2_Pin|PB3_Pin
-			|PB4_Pin|PB5_Pin|PB6_Pin|PB7_Pin, GPIO_PIN_SET);
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOA, PB0_Pin|PB1_Pin|PB2_Pin|PB3_Pin 
+                          |PB4_Pin|PB5_Pin|PB6_Pin|PB7_Pin, GPIO_PIN_SET);
 
-	/*Configure GPIO pin : PC13 */
-	GPIO_InitStruct.Pin = GPIO_PIN_13;
-	GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  /*Configure GPIO pin : PC13 */
+  GPIO_InitStruct.Pin = GPIO_PIN_13;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-	/*Configure GPIO pins : PA2 PA3 */
-	GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_3;
-	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-	GPIO_InitStruct.Pull = GPIO_PULLUP;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-	GPIO_InitStruct.Alternate = GPIO_AF7_USART2;
-	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  /*Configure GPIO pins : PA2 PA3 */
+  GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_3;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF7_USART2;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-	/*Configure GPIO pins : PB0_Pin PB1_Pin PB2_Pin PB3_Pin
+  /*Configure GPIO pins : PB0_Pin PB1_Pin PB2_Pin PB3_Pin 
                            PB4_Pin PB5_Pin PB6_Pin PB7_Pin */
-	GPIO_InitStruct.Pin = PB0_Pin|PB1_Pin|PB2_Pin|PB3_Pin
-			|PB4_Pin|PB5_Pin|PB6_Pin|PB7_Pin;
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
-	GPIO_InitStruct.Pull = GPIO_PULLUP;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  GPIO_InitStruct.Pin = PB0_Pin|PB1_Pin|PB2_Pin|PB3_Pin 
+                          |PB4_Pin|PB5_Pin|PB6_Pin|PB7_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 }
 
@@ -504,31 +505,31 @@ inline uint8_t ReadRingBuffer(void)
 /* USER CODE END 4 */
 
 /**
- * @brief  This function is executed in case of error occurrence.
- * @retval None
- */
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
 void Error_Handler(void)
 {
-	/* USER CODE BEGIN Error_Handler_Debug */
+  /* USER CODE BEGIN Error_Handler_Debug */
 	/* User can add his own implementation to report the HAL error return state */
 
-	/* USER CODE END Error_Handler_Debug */
+  /* USER CODE END Error_Handler_Debug */
 }
 
 #ifdef  USE_FULL_ASSERT
 /**
- * @brief  Reports the name of the source file and the source line number
- *         where the assert_param error has occurred.
- * @param  file: pointer to the source file name
- * @param  line: assert_param error line source number
- * @retval None
- */
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
 void assert_failed(uint8_t *file, uint32_t line)
 { 
-	/* USER CODE BEGIN 6 */
+  /* USER CODE BEGIN 6 */
 	/* User can add his own implementation to report the file name and line number,
      tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-	/* USER CODE END 6 */
+  /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
 
