@@ -268,14 +268,15 @@ int main(void)
 				if (midiCommand.data[0]==MIDI_PED) {
 					if (midiCommand.data[1]<64) {
 						/**
-						 * Turn it on by NOT ANDing
-						 */
-						keyboardMatrix[PEDAL_ZONE] &= ~(1 << 6);
-					} else {
-						/**
-						 * Turn it off by ORing
+						 * Turn it on
 						 */
 						keyboardMatrix[PEDAL_ZONE] |= (1 << 6);
+					} else {
+						/**
+						 * Turn it off
+						 */
+
+						keyboardMatrix[PEDAL_ZONE] &= ~(1 << 6);
 					}
 				}
 				break;
