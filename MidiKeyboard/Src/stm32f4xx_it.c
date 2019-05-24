@@ -228,8 +228,10 @@ void SPI3_IRQHandler(void)
 {
   /* USER CODE BEGIN SPI3_IRQn 0 */
 	if((__HAL_SPI_GET_FLAG(&hspi3, SPI_FLAG_RXNE)))
-	{
-		switch((uint8_t)hspi3.Instance->DR) {
+	{	
+		volatile uint8_t i = (uint8_t)hspi3.Instance->DR;
+
+		switch(i) {
 		case 0b01111111 :
 			GPIOA->ODR=(uint16_t)keyboardMatrix[0]<<4;
 			break;
